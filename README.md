@@ -9,17 +9,17 @@ AWS Access Key and Secret Key are taken from default profile (`~/.aws`). They ca
 ## Initial script parameters
 
 `--h (help)` <br>
-Shows available keys and their behavior
+Shows available keys and their behavior <br>
 `--s (help)` <br>
-Wraps AWS CLI commands into Shell
+Wraps AWS CLI commands into Shell <br>
 `--v (vpc)` <br>
-Sets VPC ID of destination VPC
+Sets VPC ID of destination VPC <br>
 `--sc (source)` <br>
-Sets source AWS availability region
+Sets source AWS availability region <br>
 `--ds (dest)` <br>
-Sets detination AWS availability region
+Sets detination AWS availability region <br>
 Security Group ID <br>
-Non-prefix parameter, denoting which group is to be migrated.
+Non-prefix parameter, denoting which group is to be migrated
 
 ## Usage
 The solution consists of two scripts: initial generation Pyhton script and resulting Bash script for creating Security Groups.
