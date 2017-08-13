@@ -8,17 +8,17 @@ AWS Access Key and Secret Key are taken from default profile (`~/.aws`). They ca
 
 ## Initial script parameters
 
-* --h (help) <br>
+`--h (help)` <br>
 Shows available keys and their behavior
-* --s (help) <br>
+`--s (help)` <br>
 Wraps AWS CLI commands into Shell
-* --v (vpc) <br>
+`--v (vpc)` <br>
 Sets VPC ID of destination VPC
-* --sc (source) <br>
+`--sc (source)` <br>
 Sets source AWS availability region
-* --ds (dest) <br>
+`--ds (dest)` <br>
 Sets detination AWS availability region
-* Security Group ID
+Security Group ID <br>
 Non-prefix parameter, denoting which group is to be migrated.
 
 ## Usage
