@@ -11,14 +11,14 @@ AWS Access Key and Secret Key are taken from default profile (`~/.aws`). They ca
 `--h (help)` <br>
 Shows available keys and their behavior <br>
 `--s (help)` <br>
-Wraps AWS CLI commands into Shell <br>
+Wraps AWS CLI commands into Shell. Optional. <br>
 `--v (vpc)` <br>
-Sets VPC ID of destination VPC <br>
+Sets VPC ID of destination VPC. Optional. <br>
 `--src (source)` <br>
 Sets source AWS availability region <br>
 `--ds (dest)` <br>
-Sets detination AWS availability region <br>
-Security Group ID <br>
+Sets detination AWS availability region. Optional.<br>
+`Security Group ID` <br>
 Non-prefix parameter, denoting which group is to be migrated
 
 ## Usage
@@ -38,4 +38,8 @@ For creating pure AWS CLI commands
 For migrating Security Groups from current region `--src` parameter can be omitted. The current region is taken from profile
 
 	python3 aws_sg_migrate.py --vpc=vpc-05643b6c --src=us-east-1 --dest=us-west-1 sg-74323418
+	
+For replicating single Security Group into all regional availability zones `--vpc` parameter can be omitted. In this case all VPC IDs are taken from the dictionary in the begginning of the script.
+
+	python3 aws_sg_migrate.py --src=us-east-1 sg-74323418
 
