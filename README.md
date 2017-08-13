@@ -3,7 +3,7 @@ aws_sg_migrate.py
 Python3 script for migrating AWS EC2 Security Groups across availability regions
 
 ## Initial configuration
-One should have Python3 and Bash and AWS CLI properly installed. No special ocnfiguration is needed.
+One should have Python3 and Bash and AWS CLI properly installed. No special ocnfiguration is needed.<br>
 AWS Access Key and Secret Key are taken from default profile (`~/.aws`). They can be set by `aws configure`.
 
 ## Initial script parameters
