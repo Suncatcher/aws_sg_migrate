@@ -3,7 +3,7 @@ aws_sg_migrate.py
 Python3 script for migrating AWS EC2 Security Groups across availability regions
 
 ## Initial configuration
-One should have Python3 and Bash and AWS CLI properly installed. No special ocnfiguration is needed.<br>
+One should have Python3 and Bash and AWS CLI properly installed. No special configuration is needed.<br>
 AWS Access Key and Secret Key are taken from default profile (`~/.aws`). They can be set by `aws configure`.
 
 ## Initial script parameters
@@ -23,8 +23,7 @@ Non-prefix parameter, denoting which group is to be migrated
 
 ## Usage
 The solution consists of two scripts: initial generation Pyhton script and resulting Bash script for creating Security Groups.
-With the first script user sets desired parameters, from wich intermediate Bash scripts with AWS CLI commands is generated. In case group with the same name iss found on destionation region it is recreated with the updated rules.
-For creating Security Groups one should run this Bash script.
+With the first script user sets desired parameters, from wich intermediate Bash scripts with AWS CLI commands is generated. For creating Security Groups one should run this generated Bash script.  In case group with the same name is found in destination region it is recreated with the updated rules.
 
 The initial script runs as following:
 
