@@ -1,19 +1,22 @@
 #!/usr/bin/python
 
 import sys, os, stat, re, subprocess, getopt, json
-regions={'us-east-2':'vpc-b5eb1fdc','us-east-1':'vpc-7a2eac1d','us-west-1':'vpc-09735b6c','us-west-2':'vpc-5eb6cc3a','ap-south-1':'vpc-4209e02b','ap-northeast-2':'vpc-3954e850','ap-southeast-1':'vpc-c20d13a7','ap-southeast-2':'vpc-4e0c3a2b','ap-northeast-1':'vpc-2dadad48','ca-central-1':'vpc-1beb6f72','eu-central-1':'vpc-88b78fe1','eu-west-1':'vpc-73aa0e17', 'eu-west-2':'vpc-0c1be165','sa-east-1':'vpc-f405ee90'}
+regions={'us-east-2':'vpc-dfghg5','us-east-1':'vpc-7hfghh','us-west-1':'23446hh','us-west-2':'vpc-76845g','ap-south-1':'vpc-dfjlkj5','ap-northeast-2':'vpc-456875dd','ap-southeast-1':'vpc-243453kj','ap-southeast-2':'vpc-57khjhj','ap-northeast-1':'vpc-2313424hh','ca-central-1':'vpc-9898fds','eu-central-1':'vpc-99dsfds','eu-west-1':'vpc-32423hh', 'eu-west-2':'vpc-23123khh','sa-east-1':'vpc-9787fdd'}
 
 def makesg(profile, sgid, vpcid, source, dest, shell):
-    
+
     script = open('%s.sh' % sgid, 'w')
+    
+    cmd = [ 'aws', 'ec2', 'describe-security-groups', '--region=%s' % source, '--output=json', ]
     if source:
-        cmd = [ 'aws', 'ec2', 'describe-security-groups', '--region=%s' % source, '--group-id=%s' % sgid, '--output=json', ]
+        cmd.append("--group-id=%s" % (sgid))
     else:
         cmd = [ 'aws', 'ec2', 'describe-security-groups', '--group-id=%s' % sgid, '--output=json', ]
     
     if profile:
         cmd.append('--profile')
         cmd.append(profile)
+    
     ap = subprocess.check_output(cmd)
     
     data = json.loads(ap.decode('utf-8'))
@@ -22,7 +25,7 @@ def makesg(profile, sgid, vpcid, source, dest, shell):
         print("Internal error: no SecurityGroups key in data")
         sys.exit(3)
     sg1 = data['SecurityGroups'][0]
-    groupName = sg1['GroupName'] + '_migrated'
+    groupName = sg1['GroupName'] #+ '_migrated'
     groupDesc = sg1['Description']
 
     # Sanity check
@@ -39,7 +42,6 @@ def makesg(profile, sgid, vpcid, source, dest, shell):
                     sys.stderr.write("Error: Don't know how to handle")
                     sys.stderr.write("key %s in IpRanges\n" % (k))
                     sys.exit(4)
-        # if ipp['IpProtocol'] != 'icmp' and ipp['ToPort'] != ipp['FromPort']:
     for ipp in sg1['IpPermissionsEgress']:
         if 'FromPort' not in ipp:   continue
         if 'IpProtocol' not in ipp:   continue
@@ -69,11 +71,22 @@ def makesg(profile, sgid, vpcid, source, dest, shell):
     if dest is None:
         destinations = regions
     for dest,vpc in destinations.items():
+        cmd.append("--filters=Name=group-name,Values='%s'" % (groupName))
+        ap = subprocess.check_output(cmd)
+
+        if ap is not None:
+            delete_cmd = "aws ec2 delete-security-group"
         create_cmd = "aws ec2 create-security-group --vpc-id=%s" % (vpc)
         if shell:
+            if ap is not None:
+                print("sgout=(`%s --group-name='%s' --region %s --output table`)" % (delete_cmd, groupName, dest), file=script)
+                print('if [ $? != 0 ]; then', file=script)
+                print('   echo "Error: %s failed"' % (delete_cmd), file=script)
+                print('   exit 1', file=script)
+                print('fi', file=script)       
             print("sgout=(`%s --group-name='%s' --region %s --description='%s' --output table`)" % (create_cmd, groupName, dest, groupDesc), file=script)
             print('if [ $? != 0 ]; then', file=script)
-            print('   echo "Error: %s failed"' % (cmd), file=script)
+            print('   echo "Error: %s failed"' % (create_cmd), file=script)
             print('   exit 1', file=script)
             print('fi', file=script)
             print('if [ "${sgout[6]}" != \'GroupId\' ]; then', file=script)
@@ -82,7 +95,8 @@ def makesg(profile, sgid, vpcid, source, dest, shell):
             print('fi', file=script)
             print('SGID=${sgout[8]}', file=script)
         else:
-            print("%s --group-name='%s' --region %s --description='%s'" % (cmd, groupName, dest, groupDesc), file=script)
+            print("%s --group-name='%s' --region %s" % (delete_cmd, groupName, dest), file=script)
+            print("%s --group-name='%s' --region %s --description='%s'" % (create_cmd, groupName, dest, groupDesc), file=script)
 
         for ipp in sg1['IpPermissions']:
             if 'FromPort' not in ipp:   continue
@@ -92,11 +106,11 @@ def makesg(profile, sgid, vpcid, source, dest, shell):
             for ipr in ipp['IpRanges']:
                 cidr = ipr['CidrIp']
 
-                cmd = "aws ec2 authorize-security-group-ingress"
+                auth_cmd = "aws ec2 authorize-security-group-ingress"
                 if shell:
-                    print("%s --region %s --group-id=$SGID --protocol='%s'" % (cmd, dest, ipp['IpProtocol']),end=" ", file=script)
+                    print("%s --region %s --group-id=$SGID --protocol='%s'" % (auth_cmd, dest, ipp['IpProtocol']),end=" ", file=script)
                 else:
-                    print("%s --region %s --group-id=PUT_SG_ID_HERE --protocol='%s'" % (cmd, dest, ipp['IpProtocol']),end=" ", file=script)
+                    print("%s --region %s --group-id=$SGID --protocol='%s'" % (auth_cmd, dest, ipp['IpProtocol']),end=" ", file=script)
                 if ipp['ToPort'] < 0:
                     # ICMP ToPort was -1 ???
                     ipp['ToPort'] = ipp['FromPort']
@@ -107,7 +121,7 @@ def makesg(profile, sgid, vpcid, source, dest, shell):
                     print("--cidr=%s" % (ipr['CidrIp']), file=script)
                 if shell:
                     print('if [ $? != 0 ]; then', file=script)
-                    print('   echo "Error: %s failed"' % (cmd), file=script)
+                    print('   echo "Error: %s failed"' % (auth_cmd), file=script)
                     print('   exit 1', file=script)
                     print('fi', file=script)
 
@@ -119,11 +133,11 @@ def makesg(profile, sgid, vpcid, source, dest, shell):
             for ipr in ipp['IpRanges']:
                 cidr = ipr['CidrIp']
 
-                cmd = "aws ec2 authorize-security-group-egress"
+                auth_cmd = "aws ec2 authorize-security-group-egress"
                 if shell:
-                    print("%s --region %s --group-id=$SGID --protocol='%s'" % (cmd, dest, ipp['IpProtocol']), end=" ", file=script)
+                    print("%s --region %s --group-id=$SGID --protocol='%s'" % (auth_cmd, dest, ipp['IpProtocol']), end=" ", file=script)
                 else:
-                    print("%s --region %s --group-id=PUT_SG_ID_HERE --protocol='%s'" % (cmd, dest, ipp['IpProtocol']), end=" ", file=script)
+                    print("%s --region %s --group-id=$SGID --protocol='%s'" % (auth_cmd, dest, ipp['IpProtocol']), end=" ", file=script)
                 if ipp['ToPort'] < 0:
                     # ICMP ToPort was -1 ???
                     ipp['ToPort'] = ipp['FromPort']
@@ -134,7 +148,7 @@ def makesg(profile, sgid, vpcid, source, dest, shell):
                     print("--cidr=%s" % (ipr['CidrIp']), file=script)
                 if shell:
                     print('if [ $? != 0 ]; then')
-                    print('   echo "Error: %s failed"' % (cmd))
+                    print('   echo "Error: %s failed"' % (auth_cmd))
                     print('   exit 1', file=script)
                     print('fi', file=script)
 
@@ -145,7 +159,7 @@ def makesg(profile, sgid, vpcid, source, dest, shell):
                         print("aws ec2 create-tags --resources $SGID",end=" ", file=script)
                         print('--tags "Key=Name,Value=%s"' % (tag['Value']), file=script)
                     else:
-                        print("aws ec2 create-tags --resources PUT_SG_ID_HERE",end=" ", file=script)
+                        print("aws ec2 create-tags --resources $SGID",end=" ", file=script)
                         print('--tags "Key=Name,Value=%s"' % (tag['Value']), file=script)
 
         #setting script permissions
@@ -183,13 +197,12 @@ def main():
             vpcid = a
 
     if len(args) != 1:
-        print("ERROR: You must give a security group id", file=script)
+        print("ERROR: You must give a security group id")
         usage()
         sys.exit(1)
     sgid = args[0]
 
     makesg(profile, sgid, vpcid, source, destination, shell)
-
 
 def usage():
     print("copysg.py [-h] [--profile=alt_profile] [--shell] [--vpc=vpcid] [-src=source_region] [--dest=dest_region]", end=" ")
