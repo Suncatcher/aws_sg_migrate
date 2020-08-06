@@ -17,13 +17,13 @@ Sets VPC ID of destination VPC. Optional. <br>
 `--sc (src)` <br>
 Sets source AWS availability region <br>
 `--ds (dest)` <br>
-Sets detination AWS availability region. Optional.<br>
+Sets destination AWS availability region. Optional.<br>
 `Security Group ID` <br>
 Non-prefix parameter, denoting which group is to be migrated
 
 ## Usage
 The solution consists of two scripts: initial generation Pyhton script and resulting Bash script for creating Security Groups.
-With the first script user sets desired parameters, from wich intermediate Bash scripts with AWS CLI commands is generated. For creating Security Groups one should run this generated Bash script.  In case group with the same name is found in destination region it is recreated with the updated rules.
+With the first script user sets desired parameters, from wich intermediate Bash scripts with AWS CLI commands is generated. For creating Security Groups one should run this generated Bash script. In case group with the same name is found in destination region it is recreated with the updated rules.
 
 The initial script runs as following:
 
