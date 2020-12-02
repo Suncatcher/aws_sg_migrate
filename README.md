@@ -1,6 +1,6 @@
 aws_sg_migrate.py
 =====================
-Python3 script for migrating AWS EC2 Security Groups across availability regions
+Python 3 script for migrating AWS EC2 Security Groups across availability regions
 
 ## Initial configuration
 One should have Python3 and Bash and AWS CLI properly installed. No special configuration is needed.<br>
@@ -27,18 +27,18 @@ With the first script user sets desired parameters, from wich intermediate Bash 
 
 The initial script runs as following:
 
-	python3 aws_sg_migrate.py --vpc=vpc-05643b6c --shell --src=us-east-1 --dest=us-west-1 sg-74323418
+	python aws_sg_migrate.py --vpc=vpc-05643b6c --shell --src=us-east-1 --dest=us-west-1 sg-74323418
 
 ### More usage examples:
 For creating pure AWS CLI commands
 
-	python3 aws_sg_migrate.py --vpc=vpc-05643b6c --src=us-east-1 --dest=us-west-1 sg-74323418
+	python aws_sg_migrate.py --vpc=vpc-05643b6c --src=us-east-1 --dest=us-west-1 sg-74323418
   
 For migrating Security Groups from current region `--src` parameter can be omitted. The current region is taken from profile
 
-	python3 aws_sg_migrate.py --vpc=vpc-05643b6c --src=us-east-1 --dest=us-west-1 sg-74323418
+	python aws_sg_migrate.py --vpc=vpc-05643b6c --dest=us-west-1 sg-74323418
 	
-For replicating single Security Group into all regional availability zones `--vpc` parameter can be omitted. In this case all VPC IDs are taken from the dictionary in the begginning of the script.
+For replicating a Security Group into all regional availability zones `--vpc` parameter can be omitted, in that way it will be replicated into all regions
 
-	python3 aws_sg_migrate.py --src=us-east-1 sg-74323418
+	python aws_sg_migrate.py --src=us-east-1 sg-74323418
 
