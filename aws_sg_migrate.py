@@ -48,7 +48,8 @@ def makesg(profile, sgid, vpcid, source, destin, shell):
     groupTags = sg1['Tags']
     
     # Sanity check
-    for ipp in sg1['IpPermissions']:
+    perms = sg1['IpPermissions'] + sg1['IpPermissionsEgress']
+    for ipp in perms:
         if 'FromPort' not in ipp:   continue
         if 'IpProtocol' not in ipp:   continue
         if 'IpRanges' not in ipp:   continue
@@ -57,23 +58,10 @@ def makesg(profile, sgid, vpcid, source, destin, shell):
             sys.stderr.write("Warning: ignoring User Id info\n")
         for ipr in ipp['IpRanges']:
             for k in ipr.keys():
-                if k != 'CidrIp':
+                if k != 'CidrIp' and k != 'Description':
                     sys.stderr.write("Error: Don't know how to handle")
                     sys.stderr.write("key %s in IpRanges\n" % (k))
                     sys.exit(4)
-    for ipp in sg1['IpPermissionsEgress']:
-        if 'FromPort' not in ipp:   continue
-        if 'IpProtocol' not in ipp:   continue
-        if 'IpRanges' not in ipp:   continue
-        if 'ToPort' not in ipp:   continue
-        if len(ipp['UserIdGroupPairs']) > 0:
-            sys.stderr.write("Warning: ignoring User Id info\n")
-        for ipr in ipp['IpRanges']:
-            for k in ipr.keys():
-                if k != 'CidrIp':
-                    sys.stderr.write("Error: Don't know how to handle")
-                    sys.stderr.write("key %s in IpRanges\n" % (k))
-                    sys.exit(4) 
 
     destinations = []   
 
@@ -116,7 +104,8 @@ def makesg(profile, sgid, vpcid, source, destin, shell):
         else:
             if groupName != 'default' and groupName in sgNames:
                 print("%s --group-name='%s' --region %s" % (delete_cmd, groupName, dest), file=script)
-            print("sgid=$(%s --group-name='%s' --region %s --description='%s')" % (create_cmd, groupName, dest, groupDesc), file=script)
+            print("sgcreate=$(%s --group-name='%s' --region %s --description='%s')" % (create_cmd, groupName, dest, groupDesc), file=script)
+            print("sgid=$(echo $sgcreate|sed 's/{//g;s/}//g;s/\"//g'|cut -d ':' -f2)", file=script)
 
         for ipp in sg1['IpPermissions']:
             if 'FromPort' not in ipp:   continue
@@ -132,7 +121,6 @@ def makesg(profile, sgid, vpcid, source, destin, shell):
                 else:
                     print("%s --region %s --group-name=%s --protocol='%s'" % (auth_cmd, dest, groupName, ipp['IpProtocol']),end=" ", file=script)
                 if ipp['ToPort'] < 0:
-                    # ICMP ToPort was -1 ???
                     ipp['ToPort'] = ipp['FromPort']
                 if ipp['FromPort'] != ipp['ToPort']:
                     print("--port=%s-%s" % (ipp['FromPort'], ipp['ToPort']),end=" ", file=script)
@@ -172,13 +160,13 @@ def makesg(profile, sgid, vpcid, source, destin, shell):
                     print('   exit 1', file=script)
                     print('fi', file=script)
 
-        #for tag in groupTags:
-        #    if shell:
-        #        print("aws ec2 create-tags --region %s --resources $SGID" % (dest, groupName), end=" ", file=script)
-        #        print('--tags "Key=%s,Value=%s"' % (tag['Key'], tag['Value']), file=script)
-        #    else:
-        #        print("aws ec2 create-tags --region %s --resources $sgid" % (dest), end=" ", file=script)
-        #        print('--tags "Key=%s,Value=%s"' % (tag['Key'], tag['Value']), file=script)
+        for tag in groupTags:
+            if shell:
+                print("aws ec2 create-tags --region %s --resources $SGID" % (dest), end=" ", file=script)
+                print('--tags "Key=%s,Value=%s"' % (tag['Key'], tag['Value']), file=script)
+            else:
+                print("aws ec2 create-tags --region %s --resources $sgid" % (dest), end=" ", file=script)
+                print('--tags "Key=%s,Value=%s"' % (tag['Key'], tag['Value']), file=script)
 
         #setting script permissions
         os.chmod(script.name, 0o755)
